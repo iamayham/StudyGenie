@@ -21,17 +21,28 @@ connectDB();
 
 const app = express();
 
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  "http://localhost:5173",
-  "http://localhost:5174",
-].filter(Boolean);
+const configuredOrigins = (process.env.CLIENT_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [...configuredOrigins, "http://localhost:5173", "http://localhost:5174"];
+
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  // Keep explicit allowlist support, but also allow any HTTPS origin
+  // to prevent production CORS lockouts across Vercel preview domains.
+  if (allowedOrigins.includes(origin)) return true;
+  if (/^https:\/\/.*\.vercel\.app$/.test(origin)) return true;
+  if (/^https:\/\//.test(origin)) return true;
+  return /^http:\/\/localhost(?::\d+)?$/.test(origin);
+};
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow non-browser requests (no Origin header) and known frontend origins.
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (isAllowedOrigin(origin)) {
         return callback(null, true);
       }
       return callback(new Error("Not allowed by CORS"));

@@ -22,7 +22,11 @@ export default function ForgotPasswordPage() {
       setMessage(data.message);
       setStep("verifyOtp");
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to send OTP. Please try again.");
+      const serverMessage = err?.response?.data?.message;
+      const fallbackMessage = err?.response
+        ? "Failed to send OTP. Please try again."
+        : "Cannot reach server. Please try again.";
+      setError(serverMessage || fallbackMessage);
     } finally {
       setLoading(false);
     }
