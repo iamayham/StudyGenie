@@ -1,6 +1,8 @@
 import api from "./client";
 
-const CHAT_PROXY_URL = `${import.meta.env.VITE_API_URL || "http://localhost:5001/api"}/chat`;
+const BASE_API_URL =
+  import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "/api" : "http://localhost:8080/api");
+const CHAT_PROXY_URL = `${BASE_API_URL}/chat`;
 
 export const getSummary = async (content) => {
   const { data } = await api.post("/ai/summary", { content });
