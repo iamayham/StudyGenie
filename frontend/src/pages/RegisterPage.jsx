@@ -19,7 +19,11 @@ export default function RegisterPage() {
       localStorage.setItem("userId", data.user.id);
       navigate("/dashboard");
     } catch (err) {
-      setError(err?.response?.data?.message || "Registration failed");
+      const serverMessage = err?.response?.data?.message;
+      const fallbackMessage = err?.response
+        ? "Registration failed. Please try again."
+        : "Cannot reach server. Please try again.";
+      setError(serverMessage || fallbackMessage);
     } finally {
       setLoading(false);
     }
