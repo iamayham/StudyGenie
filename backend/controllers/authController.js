@@ -103,7 +103,12 @@ const forgotPassword = async (req, res, next) => {
     user.passwordResetOtpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
 
-    await sendOtpEmail({ to: normalizedEmail, otp });
+    try {
+      await sendOtpEmail({ to: normalizedEmail, otp });
+    } catch (emailError) {
+      // Do not block the API response on provider errors; keep response generic for safety.
+      console.error("Failed to send OTP email:", emailError.message);
+    }
     return res.status(200).json(genericResponse);
   } catch (error) {
     return next(error);
