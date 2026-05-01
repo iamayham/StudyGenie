@@ -1,97 +1,28 @@
 const express = require("express");
-const cors = require("cors");
-const dotenv = require("dotenv");
-const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
 const path = require("path");
-
-dotenv.config();
-
-const connectDB = require("./config/db");
-const authRoutes = require("./routes/authRoutes");
-const aiRoutes = require("./routes/aiRoutes");
-const { chatWithContent } = require("./services/openaiService");
-const errorHandler = require("./middleware/errorHandler");
-
-if (!process.env.MONGO_URI || !process.env.JWT_SECRET || !process.env.OPENAI_API_KEY) {
-  console.error("Missing required environment variables.");
-  process.exit(1);
-}
-
-connectDB();
 
 const app = express();
 
-const configuredOrigins = (process.env.CLIENT_URL || "")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+// Middleware (optional if you already have it)
+app.use(express.json());
 
-const allowedOrigins = [...configuredOrigins, "http://localhost:5173", "http://localhost:5174"];
+// ================= API ROUTES =================
+// Example:
+// app.use("/api/auth", require("./routes/authRoutes"));
+// app.use("/api/ai", require("./routes/aiRoutes"));
 
-const isAllowedOrigin = (origin) => {
-  if (!origin) return true;
-  // Keep explicit allowlist support, but also allow any HTTPS origin
-  // to prevent production CORS lockouts across Vercel preview domains.
-  if (allowedOrigins.includes(origin)) return true;
-  if (/^https:\/\/.*\.vercel\.app$/.test(origin)) return true;
-  if (/^https:\/\//.test(origin)) return true;
-  return /^http:\/\/localhost(?::\d+)?$/.test(origin);
-};
+// ================= FRONTEND =================
+// Serve static files from frontend build
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow non-browser requests (no Origin header) and known frontend origins.
-      if (isAllowedOrigin(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error("Not allowed by CORS"));
-    },
-  })
-);
-app.use(helmet());
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 200,
-    standardHeaders: true,
-    legacyHeaders: false,
-  })
-);
-app.use(express.json({ limit: "2mb" }));
-
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ message: "StudyGenie API is running" });
-});
-
-app.use("/api/auth", authRoutes);
-app.use("/api/ai", aiRoutes);
-
-// Public chat proxy endpoint for frontend (no API key in client).
-app.post("/api/chat", async (req, res, next) => {
-  try {
-    const { message } = req.body;
-    if (!message?.trim()) {
-      return res.status(400).json({ message: "Message is required" });
-    }
-
-    const answer = await chatWithContent("", message.trim());
-    return res.status(200).json({ answer });
-  } catch (error) {
-    return next(error);
-  }
-});
-
-app.use(express.static(path.join(process.cwd(), "frontend/dist")));
-
+// Fallback for React/Vite (SPA)
 app.get("*", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "frontend/dist/index.html"));
+  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
 });
 
-app.use(errorHandler);
-
+// ================= SERVER =================
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
