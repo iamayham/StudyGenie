@@ -105,6 +105,7 @@ const forgotPassword = async (req, res, next) => {
     try {
       await sendOtpEmail({ to: normalizedEmail, otp });
     } catch (emailError) {
+      console.error("OTP email transport failure:", emailError.message);
       const transportError = new Error("Failed to send OTP email. Please try again.");
       transportError.statusCode = 502;
       return next(transportError);
