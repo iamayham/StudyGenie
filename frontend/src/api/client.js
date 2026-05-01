@@ -1,8 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL || "https://studygenie-backend-rkeu.onrender.com/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5001/api",
 });
 
 api.interceptors.request.use((config) => {
