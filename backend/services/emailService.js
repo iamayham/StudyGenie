@@ -1,6 +1,7 @@
 const nodemailer = require("nodemailer");
 
 let cachedTransporter;
+const EMAIL_SEND_TIMEOUT_MS = 12000;
 
 const getTransporter = async () => {
   if (cachedTransporter) return cachedTransporter;
@@ -16,6 +17,9 @@ const getTransporter = async () => {
     host: SMTP_HOST,
     port: Number(SMTP_PORT),
     secure: Number(SMTP_PORT) === 465,
+    connectionTimeout: EMAIL_SEND_TIMEOUT_MS,
+    greetingTimeout: EMAIL_SEND_TIMEOUT_MS,
+    socketTimeout: EMAIL_SEND_TIMEOUT_MS,
     auth: {
       user: SMTP_USER,
       pass: SMTP_PASS,
@@ -29,7 +33,7 @@ const sendOtpEmail = async ({ to, otp }) => {
   const transporter = await getTransporter();
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
-  await transporter.sendMail({
+  const mailPromise = transporter.sendMail({
     from,
     to,
     subject: "StudyGenie Password Reset OTP",
@@ -43,6 +47,12 @@ const sendOtpEmail = async ({ to, otp }) => {
       </div>
     `,
   });
+
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("SMTP send timeout")), EMAIL_SEND_TIMEOUT_MS);
+  });
+
+  await Promise.race([mailPromise, timeoutPromise]);
 };
 
 module.exports = {
