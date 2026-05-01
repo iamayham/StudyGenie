@@ -1,6 +1,8 @@
 import api from "./client";
 
-const CHAT_PROXY_URL = `${import.meta.env.VITE_API_URL || "http://localhost:5001/api"}/chat`;
+const CHAT_PROXY_URL = `${
+  import.meta.env.VITE_API_URL || "https://studygenie-backend-rkeu.onrender.com/api"
+}/chat`;
 
 export const getSummary = async (content) => {
   const { data } = await api.post("/ai/summary", { content });
